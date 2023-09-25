@@ -20,8 +20,10 @@ use crate::{
 
 type Board = Array2<Option<Tile>>;
 type Position = (usize, usize);
+const EDGE_LEN: usize = 4;
 fn main() {
     let path = "../test.txt";
+
     let file = File::open(path).unwrap();
     let groups = BufReader::new(file)
         .lines()
@@ -68,12 +70,13 @@ fn main() {
     //part 2
 
     let mut blank_faces = Array2::from_shape_fn((4, 4), |(x, y)| {
-        board.get((x * EDGE_LEN, y * EDGE_LEN)).is_some()
+        board.get((x * EDGE_LEN, y * EDGE_LEN)).is_some_and(|option| option.is_some())
     });
+    println!("blank_faces:\n{blank_faces:?}");
     let mut cube_projection: CubeProjection = Array2::default((4, 4));
     let (index, blank_face) = blank_faces
         .indexed_iter_mut()
-        .find(|(_, bool)| **bool)
+        .find(|(_, is_some)| **is_some)
         .unwrap();
     *blank_face = false;
     *cube_projection.index_mut(index) = Some((1u8, 0u8));
@@ -140,16 +143,15 @@ fn main() {
             stack.push((index, new_index, abs_angle as i8));
         }
     }
-
+    println!("projection:\n{cube_projection:?}");
     let face_map: FaceMap = cube_projection
-    println!()
         .indexed_iter()
         .filter_map(|(index, option)| option.and_then(|(face, angle)| Some((face, (angle, index)))))
         .collect(); //match option{
                     // Some((face, angle)) => Some((*face, (*angle, index))),
                     // None => None,
                     // ).collect();
-
+    println!("facemap:\n{face_map:?}");
     let mut angle = RIGHT;
     let mut position = (start_col, start_row); //coincidental same as face1
                                                // println!("start position: {position:?}");
@@ -177,8 +179,6 @@ fn main() {
     //     }
     // }
 }
-
-const EDGE_LEN: usize = 50;
 
 type CubeProjection = Array2<Option<(Face, Angle)>>;
 type FaceMap = HashMap<Face, (Angle, (usize, usize))>;
